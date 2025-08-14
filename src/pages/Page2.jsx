@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -19,6 +19,7 @@ import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import FicheTechnique from "../components/FicheTechnique.jsx";
 import ProductCard from "../components/ProductCard.jsx";
+import SearchFilter from "../components/SearchFilter.jsx";
 
 const SidebarCard = styled(Box)(({ theme }) => ({
   backgroundColor: "white",
@@ -32,7 +33,7 @@ const SidebarCard = styled(Box)(({ theme }) => ({
   },
 }));
 
-const Page2 = () => {
+const Page2 = ({ products = [], globalSearchCriteria = {} }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
@@ -41,9 +42,12 @@ const Page2 = () => {
   const [showFicheTechnique, setShowFicheTechnique] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [sortBy, setSortBy] = useState("prix_bas");
-  const [selectedBrands, setSelectedBrands] = useState(["sma"]);
+  const [selectedBrands, setSelectedBrands] = useState(["sma", "fronius", "abb"]);
+  const [showSearchFilter, setShowSearchFilter] = useState(false);
+  const [searchCriteria, setSearchCriteria] = useState({});
 
-  const inverters = [
+  // Use products from props or fallback to local inverters
+  const localProducts = products.length > 0 ? products.filter(p => p.type === "onduleur") : [
     {
       id: 1,
       name: "SMA Sunny Boy",
@@ -54,6 +58,11 @@ const Page2 = () => {
       brand: "SMA",
       logo: "SMA",
       type: "onduleur",
+      technology: "String Inverter",
+      efficiency: "96.5%",
+      warranty: "10",
+      certification: "IEC 62109",
+      availability: "En stock"
     },
     {
       id: 2,
@@ -65,6 +74,11 @@ const Page2 = () => {
       brand: "Fronius",
       logo: "Fronius",
       type: "onduleur",
+      technology: "Hybrid Inverter",
+      efficiency: "97.2%",
+      warranty: "10",
+      certification: "IEC 62109",
+      availability: "Sur commande"
     },
     {
       id: 3,
@@ -76,6 +90,11 @@ const Page2 = () => {
       brand: "SMA",
       logo: "SMA",
       type: "onduleur",
+      technology: "String Inverter",
+      efficiency: "96.8%",
+      warranty: "10",
+      certification: "IEC 62109",
+      availability: "En stock"
     },
     {
       id: 4,
@@ -87,30 +106,57 @@ const Page2 = () => {
       brand: "ABB",
       logo: "ABB",
       type: "onduleur",
+      technology: "String Inverter",
+      efficiency: "96.2%",
+      warranty: "10",
+      certification: "IEC 62109",
+      availability: "Livraison rapide"
     },
     {
       id: 5,
-      name: "",
-      power: "",
-      price: 0,
-      image: "",
+      name: "SolarEdge HD-Wave",
+      power: "6.0 kW",
+      price: 1400,
+      image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop&crop=center",
       isNew: false,
-      brand: "",
-      logo: "",
+      brand: "SolarEdge",
+      logo: "SolarEdge",
       type: "onduleur",
+      technology: "Power Optimizer",
+      efficiency: "97.5%",
+      warranty: "12",
+      certification: "IEC 62109",
+      availability: "En stock"
     },
     {
       id: 6,
-      name: "",
-      power: "",
-      price: 0,
-      image: "",
-      isNew: false,
-      brand: "",
-      logo: "",
+      name: "Enphase IQ7+",
+      power: "0.3 kW",
+      price: 180,
+      image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop&crop=center",
+      isNew: true,
+      brand: "Enphase",
+      logo: "Enphase",
       type: "onduleur",
+      technology: "Micro Inverter",
+      efficiency: "97.0%",
+      warranty: "25",
+      certification: "IEC 62109",
+      availability: "Sur commande"
     },
   ];
+
+  // Update search criteria when global search changes
+  useEffect(() => {
+    if (globalSearchCriteria && Object.keys(globalSearchCriteria).length > 0) {
+      if (globalSearchCriteria.showFilter) {
+        setShowSearchFilter(true);
+      } else {
+        setSearchCriteria(globalSearchCriteria);
+        setShowSearchFilter(true);
+      }
+    }
+  }, [globalSearchCriteria]);
 
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
@@ -145,8 +191,86 @@ const Page2 = () => {
     }
   };
 
-  const filteredAndSortedInverters = inverters
-    .filter(inverter => inverter.name && selectedBrands.includes(inverter.brand.toLowerCase()))
+  const handleSearch = (searchData) => {
+    console.log("Search data:", searchData);
+    setSearchCriteria(searchData);
+  };
+
+  const clearSearch = () => {
+    setSearchCriteria({});
+  };
+
+  // Function to check if a product matches search criteria
+  const productMatchesSearch = (product) => {
+    if (!searchCriteria.criteria || Object.keys(searchCriteria.criteria).length === 0) {
+      return true;
+    }
+
+    const { criteria, selectedCriteria } = searchCriteria;
+    
+    // Check if any selected criteria match the product
+    return selectedCriteria.some(critKey => {
+      const critValue = criteria[critKey];
+      if (!critValue || critValue === "") return false;
+      
+      // Convert to lowercase for case-insensitive search
+      const searchValue = critValue.toLowerCase();
+      const productName = product.name.toLowerCase();
+      const productBrand = product.brand.toLowerCase();
+      const productPower = product.power.toLowerCase();
+      const productType = product.type.toLowerCase();
+      const productTechnology = (product.technology || "").toLowerCase();
+      const productEfficiency = (product.efficiency || "").toLowerCase();
+      const productWarranty = (product.warranty || "").toLowerCase();
+      const productCertification = (product.certification || "").toLowerCase();
+      const productAvailability = (product.availability || "").toLowerCase();
+      
+      // Special handling for different criteria types
+      switch (critKey) {
+        case "critere1": // Product name
+          return productName.includes(searchValue);
+        case "critere2": // Power (W)
+          return productPower.includes(searchValue);
+        case "critere3": // Panel type
+          return productType.includes(searchValue);
+        case "critere4": // Price
+          const searchPrice = parseFloat(searchValue);
+          if (!isNaN(searchPrice)) {
+            return product.price <= searchPrice;
+          }
+          return false;
+        case "critere5": // Technology
+          return productTechnology.includes(searchValue) || productName.includes(searchValue);
+        case "critere6": // Efficiency
+          return productEfficiency.includes(searchValue) || productPower.includes(searchValue);
+        case "critere7": // Warranty
+          return productWarranty.includes(searchValue) || productName.includes(searchValue);
+        case "critere8": // Certification
+          return productCertification.includes(searchValue) || productBrand.includes(searchValue);
+        case "critere9": // Availability
+          return productAvailability.includes(searchValue) || productName.includes(searchValue);
+        default:
+          return (
+            productName.includes(searchValue) ||
+            productBrand.includes(searchValue) ||
+            productPower.includes(searchValue) ||
+            productType.includes(searchValue) ||
+            productTechnology.includes(searchValue) ||
+            productEfficiency.includes(searchValue) ||
+            productWarranty.includes(searchValue) ||
+            productCertification.includes(searchValue) ||
+            productAvailability.includes(searchValue)
+          );
+      }
+    });
+  };
+
+  const filteredAndSortedInverters = localProducts
+    .filter(inverter => 
+      inverter.name && 
+      selectedBrands.includes(inverter.brand.toLowerCase()) &&
+      productMatchesSearch(inverter)
+    )
     .sort((a, b) => {
       if (sortBy === "prix_haut") {
         return b.price - a.price;
@@ -293,23 +417,112 @@ const Page2 = () => {
                 </Box>
               </Box>
             </SidebarCard>
+
+            {/* Search Filter Toggle */}
+            <SidebarCard>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => setShowSearchFilter(!showSearchFilter)}
+                sx={{
+                  background: "#0d6efd",
+                  color: "white",
+                  borderRadius: 2,
+                  py: 1.5,
+                  "&:hover": {
+                    background: "#0b5ed7",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 6px 20px rgba(13, 110, 253, 0.3)",
+                  },
+                }}
+              >
+                {showSearchFilter ? "Masquer la recherche" : "Recherche avancée"}
+              </Button>
+            </SidebarCard>
           </Box>
 
           {/* Main Content */}
           <Box sx={{ flex: 1, order: { xs: 1, lg: 2 } }}>
+            {/* Search Filter */}
+            {showSearchFilter && (
+              <Box sx={{ mb: 3 }}>
+                <SearchFilter onSearch={handleSearch} productType="onduleur" />
+                {Object.keys(searchCriteria).length > 0 && (
+                  <Box sx={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "space-between",
+                    mt: 2,
+                    p: 2,
+                    backgroundColor: "white",
+                    borderRadius: 2,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                  }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {filteredAndSortedInverters.length} onduleur(s) trouvé(s)
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={clearSearch}
+                      sx={{
+                        borderColor: "#dc3545",
+                        color: "#dc3545",
+                        "&:hover": {
+                          borderColor: "#c82333",
+                          backgroundColor: "rgba(220, 53, 69, 0.1)",
+                        },
+                      }}
+                    >
+                      Effacer la recherche
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            )}
+
             {/* Product Grid */}
-            <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ justifyContent: "center" }}>
-              {filteredAndSortedInverters.map((inverter) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={inverter.id} sx={{ display: "flex", justifyContent: "center" }}>
-                  <ProductCard
-                    product={inverter}
-                    onDetailsClick={handleDetailsClick}
-                    onCompareClick={handleCompareClick}
-                    isSelected={selectedProducts.find(p => p.id === inverter.id)}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            {filteredAndSortedInverters.length > 0 ? (
+              <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ justifyContent: "center" }}>
+                {filteredAndSortedInverters.map((inverter) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={inverter.id} sx={{ display: "flex", justifyContent: "center" }}>
+                    <ProductCard
+                      product={inverter}
+                      onDetailsClick={handleDetailsClick}
+                      onCompareClick={handleCompareClick}
+                      isSelected={selectedProducts.find(p => p.id === inverter.id)}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Box sx={{ 
+                textAlign: "center", 
+                py: 8,
+                backgroundColor: "white",
+                borderRadius: 3,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+              }}>
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                  Aucun onduleur trouvé
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Essayez de modifier vos critères de recherche ou de réinitialiser les filtres.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={clearSearch}
+                  sx={{
+                    background: "#0d6efd",
+                    "&:hover": {
+                      background: "#0b5ed7",
+                    },
+                  }}
+                >
+                  Effacer la recherche
+                </Button>
+              </Box>
+            )}
           </Box>
         </Box>
       </Container>

@@ -31,7 +31,7 @@ const SearchCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const SearchFilter = ({ onSearch }) => {
+const SearchFilter = ({ onSearch, productType = "panneau" }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -60,10 +60,31 @@ const SearchFilter = ({ onSearch }) => {
   });
 
   const criteriaOptions = {
-    critere3: ["Monocristallin", "Polycristallin", "Thin Film", "Bifacial"],
-    critere5: ["PERC", "HJT", "TOPCon", "IBC", "Standard"],
-    critere8: ["IEC 61215", "IEC 61730", "UL 1703", "CE", "TÜV"],
+    critere3: productType === "panneau" 
+      ? ["Monocristallin", "Polycristallin", "Thin Film", "Bifacial"]
+      : ["String Inverter", "Hybrid Inverter", "Micro Inverter", "Power Optimizer"],
+    critere5: productType === "panneau"
+      ? ["PERC", "HJT", "TOPCon", "IBC", "Standard"]
+      : ["String", "Hybrid", "Micro", "Central", "Standard"],
+    critere8: productType === "panneau"
+      ? ["IEC 61215", "IEC 61730", "UL 1703", "CE", "TÜV"]
+      : ["IEC 62109", "IEC 62116", "UL 1741", "CE", "TÜV"],
     critere9: ["En stock", "Sur commande", "Rupture", "Livraison rapide"],
+  };
+
+  const getCriteriaLabel = (criteriaKey) => {
+    const labels = {
+      critere1: productType === "panneau" ? "Nom du panneau" : "Nom de l'onduleur",
+      critere2: "Puissance",
+      critere3: productType === "panneau" ? "Type de panneau" : "Type d'onduleur",
+      critere4: "Prix (€)",
+      critere5: productType === "panneau" ? "Technologie" : "Technologie",
+      critere6: "Efficacité (%)",
+      critere7: "Garantie (années)",
+      critere8: "Certification",
+      critere9: "Disponibilité",
+    };
+    return labels[criteriaKey] || criteriaKey;
   };
 
   const handleCriteriaChange = (key, value) => {
@@ -153,7 +174,7 @@ const SearchFilter = ({ onSearch }) => {
               />
               <TextField
                 fullWidth
-                label="Nom du produit"
+                label={getCriteriaLabel("critere1")}
                 variant="outlined"
                 size="small"
                 value={criteria.critere1}
@@ -181,7 +202,7 @@ const SearchFilter = ({ onSearch }) => {
               />
               <TextField
                 fullWidth
-                label="Puissance (W)"
+                label={getCriteriaLabel("critere2")}
                 variant="outlined"
                 size="small"
                 value={criteria.critere2}
@@ -208,10 +229,10 @@ const SearchFilter = ({ onSearch }) => {
                 }}
               />
               <FormControl fullWidth size="small">
-                <InputLabel>Type de panneau</InputLabel>
+                <InputLabel>{getCriteriaLabel("critere3")}</InputLabel>
                 <Select
                   value={criteria.critere3}
-                  label="Type de panneau"
+                  label={getCriteriaLabel("critere3")}
                   onChange={(e) => handleCriteriaChange("critere3", e.target.value)}
                   sx={{
                     borderRadius: 2,
@@ -241,7 +262,7 @@ const SearchFilter = ({ onSearch }) => {
               />
               <TextField
                 fullWidth
-                label="Prix (€)"
+                label={getCriteriaLabel("critere4")}
                 variant="outlined"
                 size="small"
                 value={criteria.critere4}
@@ -269,10 +290,10 @@ const SearchFilter = ({ onSearch }) => {
                 }}
               />
               <FormControl fullWidth size="small">
-                <InputLabel>Technologie</InputLabel>
+                <InputLabel>{getCriteriaLabel("critere5")}</InputLabel>
                 <Select
                   value={criteria.critere5}
-                  label="Technologie"
+                  label={getCriteriaLabel("critere5")}
                   onChange={(e) => handleCriteriaChange("critere5", e.target.value)}
                   sx={{
                     borderRadius: 2,
@@ -302,7 +323,7 @@ const SearchFilter = ({ onSearch }) => {
               />
               <TextField
                 fullWidth
-                label="Efficacité (%)"
+                label={getCriteriaLabel("critere6")}
                 variant="outlined"
                 size="small"
                 value={criteria.critere6}
@@ -330,7 +351,7 @@ const SearchFilter = ({ onSearch }) => {
               />
               <TextField
                 fullWidth
-                label="Garantie (années)"
+                label={getCriteriaLabel("critere7")}
                 variant="outlined"
                 size="small"
                 value={criteria.critere7}
@@ -357,10 +378,10 @@ const SearchFilter = ({ onSearch }) => {
                 }}
               />
               <FormControl fullWidth size="small">
-                <InputLabel>Certification</InputLabel>
+                <InputLabel>{getCriteriaLabel("critere8")}</InputLabel>
                 <Select
                   value={criteria.critere8}
-                  label="Certification"
+                  label={getCriteriaLabel("critere8")}
                   onChange={(e) => handleCriteriaChange("critere8", e.target.value)}
                   sx={{
                     borderRadius: 2,
@@ -390,10 +411,10 @@ const SearchFilter = ({ onSearch }) => {
                 }}
               />
               <FormControl fullWidth size="small">
-                <InputLabel>Disponibilité</InputLabel>
+                <InputLabel>{getCriteriaLabel("critere9")}</InputLabel>
                 <Select
                   value={criteria.critere9}
-                  label="Disponibilité"
+                  label={getCriteriaLabel("critere9")}
                   onChange={(e) => handleCriteriaChange("critere9", e.target.value)}
                   sx={{
                     borderRadius: 2,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -10,10 +10,21 @@ import {
   TextField,
   InputAdornment,
   Divider,
+  IconButton,
+  Popper,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  Chip,
+  useMediaQuery as useMediaQueryHook,
 } from "@mui/material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 
 // Custom Gradient AppBar
 const GradientAppBar = styled(AppBar)(({ theme }) => ({
@@ -128,16 +139,92 @@ const SubTitle = styled(Typography)(({ theme }) => ({
   opacity: 0.85,
 }));
 
-const Header = () => {
+const Header = ({ onSearch, products = [] }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallScreen = useMediaQueryHook(theme.breakpoints.down("sm"));
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const isActive = (path) => location.pathname === path;
 
   const handleLogoClick = () => {
     navigate("/");
+  };
+
+  const handleSearchChange = (event) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    
+    if (query.trim() === "") {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    // Filter products based on search query (both panels and inverters)
+    const filtered = products.filter(product => 
+      product.name && (
+        product.name.toLowerCase().includes(query.toLowerCase()) ||
+        product.brand.toLowerCase().includes(query.toLowerCase()) ||
+        product.power.toLowerCase().includes(query.toLowerCase()) ||
+        product.technology?.toLowerCase().includes(query.toLowerCase())
+      )
+    ).slice(0, 5); // Limit to 5 results
+
+    setSearchResults(filtered);
+    setShowResults(filtered.length > 0);
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    if (searchQuery.trim() && onSearch) {
+      onSearch({
+        criteria: { critere1: searchQuery },
+        selectedCriteria: ["critere1"]
+      });
+      setShowResults(false);
+      setSearchQuery("");
+      // Navigate to main page if not already there
+      if (location.pathname !== "/") {
+        navigate("/");
+      }
+    }
+  };
+
+  const handleResultClick = (product) => {
+    setSearchQuery("");
+    setShowResults(false);
+    // Navigate to main page and trigger search
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+    if (onSearch) {
+      onSearch({
+        criteria: { critere1: product.name },
+        selectedCriteria: ["critere1"]
+      });
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowResults(false);
+  };
+
+  const handleSearchFocus = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleSearchBlur = () => {
+    // Delay hiding results to allow clicking on them
+    setTimeout(() => setShowResults(false), 200);
   };
 
   return (
@@ -199,30 +286,157 @@ const Header = () => {
             sx={{
               display: { xs: "none", md: "flex" },
               alignItems: "center",
+              position: "relative",
             }}
           >
-            <SearchField
-              placeholder="Recherche"
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box
-                      sx={{
-                        backgroundColor: "#6B21A8",
-                        borderRadius: "50%",
-                        padding: 0.7,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <SearchIcon sx={{ color: "#fff", fontSize: "1.2rem" }} />
+            <form onSubmit={handleSearchSubmit}>
+              <SearchField
+                placeholder="Rechercher panneaux ou onduleurs..."
+                size="small"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Box
+                        sx={{
+                          backgroundColor: "#6B21A8",
+                          borderRadius: "50%",
+                          padding: 0.7,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <SearchIcon sx={{ color: "#fff", fontSize: "1.2rem" }} />
+                      </Box>
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={handleClearSearch}
+                        sx={{ color: "#666" }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </form>
+
+            {/* Search Results Dropdown */}
+            {showResults && (
+              <Popper
+                open={showResults}
+                anchorEl={anchorEl}
+                placement="bottom-start"
+                sx={{
+                  zIndex: 1400,
+                  width: anchorEl ? anchorEl.offsetWidth : "auto",
+                }}
+              >
+                <Paper
+                  elevation={8}
+                  sx={{
+                    mt: 1,
+                    maxHeight: 400,
+                    overflow: "auto",
+                    borderRadius: 2,
+                    border: "1px solid rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {searchResults.length > 0 ? (
+                    <List sx={{ p: 0 }}>
+                      {searchResults.map((product) => (
+                        <ListItem
+                          key={product.id}
+                          button
+                          onClick={() => handleResultClick(product)}
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: "rgba(107, 33, 168, 0.08)",
+                            },
+                            borderBottom: "1px solid rgba(0,0,0,0.05)",
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <Avatar
+                              src={product.image}
+                              alt={product.name}
+                              sx={{ width: 40, height: 40 }}
+                            />
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={product.name}
+                            secondary={
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                                <Chip
+                                  label={product.brand}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "rgba(107, 33, 168, 0.1)",
+                                    color: "#6B21A8",
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                  {product.power} • {product.technology} • {product.type === "panneau" ? "Panneau" : "Onduleur"}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "#6B21A8" }}>
+                            {product.price}€
+                          </Typography>
+                        </ListItem>
+                      ))}
+                    </List>
+                  ) : searchQuery.trim() !== "" ? (
+                    <Box sx={{ p: 2, textAlign: "center" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Aucun résultat trouvé pour "{searchQuery}"
+                      </Typography>
                     </Box>
-                  </InputAdornment>
-                ),
+                  ) : null}
+                </Paper>
+              </Popper>
+            )}
+          </Box>
+
+          {/* Mobile Search Button */}
+          <Box sx={{ display: { xs: "flex", md: "none" } }}>
+            <Button
+              variant="outlined"
+              startIcon={<SearchIcon />}
+              onClick={() => {
+                // Navigate to main page and show search filter
+                if (location.pathname !== "/") {
+                  navigate("/");
+                }
+                // Trigger search filter to show
+                if (onSearch) {
+                  onSearch({ showFilter: true });
+                }
               }}
-            />
+              sx={{
+                borderColor: "rgba(255,255,255,0.5)",
+                color: "rgba(255,255,255,0.9)",
+                borderRadius: 2,
+                px: 2,
+                py: 1,
+                "&:hover": {
+                  borderColor: "rgba(255,255,255,0.8)",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                },
+              }}
+            >
+              {location.pathname === "/recherche" ? "Rechercher onduleurs" : "Rechercher panneaux"}
+            </Button>
           </Box>
 
           {/* Navigation Buttons */}

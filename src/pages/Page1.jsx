@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -33,7 +33,7 @@ const SidebarCard = styled(Box)(({ theme }) => ({
   },
 }));
 
-const Page1 = () => {
+const Page1 = ({ products = [], globalSearchCriteria = {} }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
@@ -46,7 +46,8 @@ const Page1 = () => {
   const [showSearchFilter, setShowSearchFilter] = useState(false);
   const [searchCriteria, setSearchCriteria] = useState({});
 
-  const products = [
+  // Use products from props instead of local state
+  const localProducts = products.length > 0 ? products : [
     {
       id: 1,
       name: "LONGI HI-MO 6",
@@ -144,6 +145,18 @@ const Page1 = () => {
       availability: "Sur commande"
     },
   ];
+
+  // Update search criteria when global search changes
+  useEffect(() => {
+    if (globalSearchCriteria && Object.keys(globalSearchCriteria).length > 0) {
+      if (globalSearchCriteria.showFilter) {
+        setShowSearchFilter(true);
+      } else {
+        setSearchCriteria(globalSearchCriteria);
+        setShowSearchFilter(true);
+      }
+    }
+  }, [globalSearchCriteria]);
 
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
@@ -252,7 +265,7 @@ const Page1 = () => {
     });
   };
 
-  const filteredAndSortedProducts = products
+  const filteredAndSortedProducts = localProducts
     .filter(product => 
       product.name && 
       selectedBrands.includes(product.brand.toLowerCase()) &&
@@ -463,7 +476,7 @@ const Page1 = () => {
             {/* Search Filter */}
             {showSearchFilter && (
               <Box sx={{ mb: 3 }}>
-                <SearchFilter onSearch={handleSearch} />
+                <SearchFilter onSearch={handleSearch} productType="panneau" />
                 {Object.keys(searchCriteria).length > 0 && (
                   <Box sx={{ 
                     display: "flex", 
