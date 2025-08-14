@@ -112,6 +112,4 @@ The theme can be easily customized by modifying `src/assets/theme/index.jsx`:
 
 MIT License - feel free to use this project for your own purposes.
 
----
 
-Built with ❤️ for the solar energy industry
